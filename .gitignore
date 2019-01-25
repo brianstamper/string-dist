@@ -1,3 +1,10 @@
+## R
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+## C++
 # Prerequisites
 *.d
 

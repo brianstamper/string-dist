@@ -5,19 +5,20 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 
-DataFrame grams(DataFrame a) {
+NumericVector grams(DataFrame a) {
   int nrow_a = a.nrows();
-  int i, r;
+  int i;
   std::vector< std::string > col_a = a[0];
   std::vector< std::string > col_b = a[1];
   
-  // TODO old return type here, needs replaced
-  std::list< std::vector<std::string> > li;
+  // return vector
+  //std::vector<float> li (nrow_a);
+  NumericVector li(nrow_a);
   
   // token function takes a string and breaks it down into many 
   // substring tokens based on a set of patterns
   auto token = [&](std::string s) {
-    
+    int j;
     // init the return vector
     std::vector< std::string > ret_vec;
     
@@ -36,40 +37,40 @@ DataFrame grams(DataFrame a) {
     int sl = s.length();
     
     // syntax for commenting the patterns is . = include, - = skip
-    for(i = 0; i < sl; i++) {
+    for(j = 0; j < sl; j++) {
       
       // length one, single characters  .  E
-      ret_vec.push_back(t.substr(i, 1));
-      
+      ret_vec.push_back(t.substr(j, 1));
+
       // length two, 2-grams ..  I
-      if(i < sl - 1) {
-        ret_vec.push_back(t.substr(i, 2));
+      if(j < sl - 2) {
+        ret_vec.push_back(t.substr(j, 2));
       }
-      
-      // length three      
-      if(i < sl - 2) {
+
+      // length three
+      if(j < sl - 3) {
         // 3-grams  ...  S
-        ret_vec.push_back(t.substr(i, 3));
+        ret_vec.push_back(t.substr(j, 3));
         // 1-skips  .-.  R
-        std::string k = t.substr(i, 1);
-        k.append(t.substr(i + 2, 1));
+        std::string k = t.substr(j, 1);
+        k.append(t.substr(j + 2, 1));
       }
-      
+
       // length four
-      if(i < sl - 3) {
+      if(j < sl - 4) {
         // 4-grams  ....  H
-        ret_vec.push_back(t.substr(i, 4));
-        // 1-skip left  .-..  L  
-        std::string k1 = t.substr(i, 1);
-        k1.append(t.substr(i + 2, 2));
+        ret_vec.push_back(t.substr(j, 4));
+        // 1-skip left  .-..  L
+        std::string k1 = t.substr(j, 1);
+        k1.append(t.substr(j + 2, 2));
         ret_vec.push_back(k1);
-        // 1-skip right  ..-.  F  
-        std::string k2 = t.substr(i, 2);
-        k2.append(t.substr(i + 3, 1));
+        // 1-skip right  ..-.  F
+        std::string k2 = t.substr(j, 2);
+        k2.append(t.substr(j + 3, 1));
         ret_vec.push_back(k2);
         // 2-skip .--.  P
-        std::string k3 = t.substr(i, 1);
-        k3.append(t.substr(i + 3, 1));
+        std::string k3 = t.substr(j, 1);
+        k3.append(t.substr(j + 3, 1));
         ret_vec.push_back(k3);
       }
     }
@@ -77,18 +78,28 @@ DataFrame grams(DataFrame a) {
     return (ret_vec); 
   };
   
-  for(i = 0, r = 0; i < nrow_a; i++) {
+  for(i = 0; i < nrow_a; i++) {
     // get the individual strings from col_a and col_b
     // pass each to token()
     // count the set union of the results
     // come up with some formula for the size of the two token lists
     //   and the union of the two, this will be our measure of similarity
     
-    // old code here..
-    li.push_back({"test1", "test2", "test3"});
+    // code adopted from https://en.cppreference.com/w/cpp/algorithm/set_intersection
+    std::vector<std::string> v1 = token(col_a[i]);
+    std::vector<std::string> v2 = token(col_b[i]);
+    std::sort(v1.begin(), v1.end());
+    std::sort(v2.begin(), v2.end());
+    
+    std::vector<std::string> v_intersection;
+    
+    std::set_intersection(v1.begin(), v1.end(),
+                          v2.begin(), v2.end(),
+                          std::back_inserter(v_intersection));
+    
+    li[i] = 1.0f - v_intersection.size() / (1.0f * std::max(v1.size(), v2.size()));
   }
-
-  // TODO check type correctness of wrap() on our output object
-  return wrap(li);
+  
+  return li;
 }
 

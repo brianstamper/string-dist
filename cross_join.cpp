@@ -2,21 +2,24 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-DataFrame cross_join(NumericVector a, NumericVector b) {
-    int size_a = a.size(),
-        size_b = b.size();
-    int i, j, r;
 
-    NumericMatrix ret_mat(size_a * size_b, 2);
-
-    for(i = 0, r = 0; i < size_a; i++) {
-        for(j = 0; j < size_b; j++, r++) {
-            ret_mat(r, 0) = a(i);
-            ret_mat(r, 1) = b(j);
-        }
+DataFrame cross_join(std::vector< std::string > col_a, std::vector< std::string > col_b) {
+  int a_size = col_a.size();
+  int b_size = col_b.size();
+  int i, j, r;
+  
+  std::vector< std::string > out_a(a_size * b_size);
+  std::vector< std::string > out_b(a_size * b_size);
+  
+  for(i = 0, r = 0; i < a_size; i++) {
+    for(j = 0; j < b_size; j++, r++) {
+      out_a[r] = col_a[i];
+      out_b[r] = col_b[j];
     }
-    colnames(ret_mat) = CharacterVector::create("set_a_row", "set_b_row");
-
-    return ret_mat;
+  }
+  
+  return DataFrame::create(_["a"] = out_a,
+                           _["b"] = out_b,
+                           _["stringsAsFactors"] = false );
 }
 
